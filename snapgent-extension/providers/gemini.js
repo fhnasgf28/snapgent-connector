@@ -686,11 +686,12 @@ const ZSProvider = (() => {
     // watcher uses this to refuse finalizing before this send's reply turn
     // exists (fixes premature loop.end on the previous turn's stable text).
     reliableCounts: true,
+    // Anti-drift config: proactively re-anchor Gemini before it drifts away from tools
+    resendSystemEvery: 5,   // user turns between system prompt re-statements
+    remindToolsEvery: 6,    // tool results between compact command reminders
     // Shown as a permanent, non-intrusive notice in the snapgentV3 panel.
-    // Gemini drifts away from emitting tool blocks after a while in long
-    // sessions - observed live, model behavior, not something the prompt fixes.
     unstableWarning:
-      "Gemini may stop using tools in long sessions. Remind it to use the commands, or start a new chat",
+      "Gemini may stop using tools in long sessions. Anti-drift auto-reminders are active; start a new chat if drift occurs.",
     init({ diag: d } = {}) { if (d) diag = d; },
     // turns
     allItems, isUserItem, isAssistantItem, itemText, classifyText,

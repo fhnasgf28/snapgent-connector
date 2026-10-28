@@ -1246,9 +1246,9 @@
     A.loopKey = null; // pinned by syncSessionState once this chat has an id + content
     let truncCount = 0;
     const MAX_TRUNC = 6;
-    // Re-send the command list after this many successful tool calls. Kept high
-    // so the reminder does not bloat the context too often.
-    const REMIND_TOOLS_EVERY = 20;
+    // Re-send the command list after this many successful tool calls.
+    // Kept to an anti-drift balanced threshold (provider-override or default 8).
+    const REMIND_TOOLS_EVERY = P.remindToolsEvery || 8;
     ui.showStop(true);
     P.setInputLock(true); // prevent user from typing while the agent is active
     ui.inputCover(true);  // keep the "Agent is working" cover up for the WHOLE loop

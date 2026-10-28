@@ -278,6 +278,17 @@ TOOLS = [
     }
 ]
 
+def safe_output(text: str, max_chars: int = 15000) -> str:
+    """Keep response sizes reasonable to prevent browser UI freezing and context overflow."""
+    if not text:
+        return text
+    if len(text) <= max_chars:
+        return text
+    return (
+        f"{text[:max_chars]}\n\n"
+        f"[Note: Output truncated at {max_chars} chars (total {len(text)}). Use specific commands or filters.]"
+    )
+
 def execute_tool(name: str, args: dict) -> str:
     global WORKSPACE_PATH
 
@@ -323,7 +334,14 @@ def execute_tool(name: str, args: dict) -> str:
             selected = lines[s_idx:e_idx]
             numbered = [f"{s_idx + i + 1:4d} | {line}" for i, line in enumerate(selected)]
             return "\n".join(numbered)
-        return text
+
+        MAX_DEFAULT_LINES = 350
+        if len(lines) > MAX_DEFAULT_LINES:
+            truncated = lines[:MAX_DEFAULT_LINES]
+            numbered = [f"{i + 1:4d} | {line}" for i, line in enumerate(truncated)]
+            header = f"[Note: Showing first {MAX_DEFAULT_LINES} of {len(lines)} lines. Use 'start_line' and 'end_line' to inspect specific sections.]\n"
+            return header + "\n".join(numbered)
+        return safe_output(text)
 
     elif name == "write_file":
         rel = args.get("path")
@@ -420,7 +438,8 @@ def execute_tool(name: str, args: dict) -> str:
             out = res.stdout
             if res.stderr:
                 out += ("\nSTDERR:\n" if out else "") + res.stderr
-            return out if out.strip() else f"(Command exited with code {res.returncode}, no output)"
+            res_text = out if out.strip() else f"(Command exited with code {res.returncode}, no output)"
+            return safe_output(res_text)
         except subprocess.TimeoutExpired:
             return "Error: Command timed out after 120 seconds."
         except Exception as e:
@@ -467,7 +486,8 @@ def execute_tool(name: str, args: dict) -> str:
             out = res.stdout
             if res.stderr:
                 out += ("\nSTDERR:\n" if out else "") + res.stderr
-            return out if out.strip() else f"(Command exited with code {res.returncode})"
+            res_text = out if out.strip() else f"(Command exited with code {res.returncode})"
+            return safe_output(res_text)
         except Exception as e:
             return f"Error executing openclaw: {e}"
 
@@ -489,7 +509,8 @@ def execute_tool(name: str, args: dict) -> str:
             out = res.stdout
             if res.stderr:
                 out += ("\nSTDERR:\n" if out else "") + res.stderr
-            return out if out.strip() else f"(Command exited with code {res.returncode})"
+            res_text = out if out.strip() else f"(Command exited with code {res.returncode})"
+            return safe_output(res_text)
         except Exception as e:
             return f"Error executing agy: {e}"
 
@@ -511,7 +532,8 @@ def execute_tool(name: str, args: dict) -> str:
             out = res.stdout
             if res.stderr:
                 out += ("\nSTDERR:\n" if out else "") + res.stderr
-            return out if out.strip() else f"(Command exited with code {res.returncode})"
+            res_text = out if out.strip() else f"(Command exited with code {res.returncode})"
+            return safe_output(res_text)
         except Exception as e:
             return f"Error executing hermes: {e}"
 
