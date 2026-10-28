@@ -28,10 +28,12 @@ def resolve_path(p: str) -> Path:
 def find_openclaw_bin() -> str:
     candidates = [
         shutil.which("openclaw"),
-        os.path.expanduser("~/.nvm/versions/node/v24.22.0/bin/openclaw"),
         os.path.expanduser("~/.local/bin/openclaw"),
-        "/usr/local/bin/openclaw"
+        "/usr/local/bin/openclaw",
     ]
+    # Check any NVM installed Node versions dynamically
+    nvm_matches = sorted(glob.glob(os.path.expanduser("~/.nvm/versions/node/*/bin/openclaw")), reverse=True)
+    candidates.extend(nvm_matches)
     for c in candidates:
         if c and os.path.exists(c):
             return c
