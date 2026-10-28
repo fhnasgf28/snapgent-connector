@@ -551,6 +551,7 @@ def execute_tool(name: str, args: dict) -> str:
         total_dirs = 0
         total_bytes = 0
         for root, dirs, files in os.walk(target):
+            dirs[:] = [d for d in dirs if d not in (".git", "__pycache__", "node_modules", ".venv", "venv")]
             total_dirs += len(dirs)
             for f in files:
                 total_files += 1

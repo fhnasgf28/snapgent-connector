@@ -155,7 +155,7 @@ else:
     ALLOWED_ORIGINS = [re.compile(r"^(chrome|moz)-extension://[A-Za-z0-9._-]+$")]
 
 async def main():
-    async with websockets.serve(handler, HOST, PORT, origins=ALLOWED_ORIGINS):
+    async with websockets.serve(handler, HOST, PORT, origins=ALLOWED_ORIGINS, compression=None, max_size=16 * 1024 * 1024):
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":

@@ -383,7 +383,12 @@ def _start_process(args, resolve_path):
         except Exception as e:
             return f'Error: could not start process: {e}'
         _PROCS[pid] = proc
-    time.sleep(1.0)
+    deadline = time.time() + 1.0
+    while time.time() < deadline:
+        if proc.lines or proc.popen.poll() is not None:
+            time.sleep(0.05)
+            break
+        time.sleep(0.02)
     return f'Started process {pid} ({proc.status()}) in {cwd}{NL}{_proc_output(proc)}'
 
 
