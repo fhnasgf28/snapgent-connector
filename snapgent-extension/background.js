@@ -129,7 +129,7 @@ function startHeartbeat() {
       }
       // Keeps the MV3 service worker alive AND detects a half-open socket.
       send({ type: "ping" }).catch(() => {});
-      refreshStudioStatus();
+      // refreshStudioStatus(); // Disabled: Roblox Studio not in use
     }
   }, HEARTBEAT_MS);
 }

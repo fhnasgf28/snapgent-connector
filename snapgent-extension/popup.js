@@ -16,16 +16,12 @@ function render(s) {
   const list = s.servers || [];
   const up = list.filter((x) => x.alive).length;
   const mcpOk = s.connected && (s.mcpAlive || up > 0 || s.tools > 0);
-  const studioOff = mcpOk && s.studio === false; // MCP up but no Studio attached
-  const ok = mcpOk && !studioOff;
   const dot = document.getElementById("dot");
-  dot.className = "dot " + (!s.connected ? "bad" : ok ? "ok" : "warn");
+  dot.className = "dot " + (!s.connected ? "bad" : mcpOk ? "ok" : "warn");
   state.textContent = s.connected
-    ? (ok ? "Connected"
-        : studioOff ? "No Studio"
-        : "Open Studio")
+    ? (mcpOk ? "Connected" : "MCP Ready")
     : "Bridge offline";
-  tools.textContent = s.connected ? `${s.tools || 0} tools` : "Run start.bat";
+  tools.textContent = s.connected ? `${s.tools || 0} tools` : "Run ./start.sh";
   servers.textContent = s.connected
     ? list.map((x) => `${x.alive ? "●" : "○"} ${x.id} (${x.alive ? x.tools + " tools" : "down"})`).join("\n")
     : "";

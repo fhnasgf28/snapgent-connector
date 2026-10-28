@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "snapgentV3 × Roblox Studio Agent",
+  "name": "snapgentV3 × VS Code & MCP Agent",
   "version": "3.0.0",
-  "description": "Turn ChatGPT, Claude, DeepSeek, Gemini, Grok, Kimi, GLM, Qwen, Arena, Meta AI or Ptero into a Roblox Studio agent that drives Studio through a local bridge.",
+  "description": "Turn ChatGPT, Claude, DeepSeek, Gemini, Grok, Kimi, GLM, Qwen, Arena, Meta AI or Ptero into an agent that drives VS Code and local MCP servers through a bridge.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://chat.deepseek.com/*",

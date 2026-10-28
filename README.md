@@ -101,8 +101,8 @@ Choose the target in the snapgentV3 bar before starting a session. Roblox Studio
 - **Microsoft Edge** or **Google Chrome** (Manifest V3).
 - **Roblox Studio** with its built-in MCP server enabled when using the Roblox target.
 - A **VS Code MCP server** configured in the local bridge when using the VS Code target.
-- **Windows** or **macOS** for the bridge.
-- **Python 3.9+** on macOS. The Windows release includes the bridge executable.
+- **Windows**, **macOS**, or **Linux** for the bridge.
+- **Python 3.9+** on Linux and macOS. The Windows release includes the bridge executable.
 - The bridge running while you use the agent.
 
 ---
@@ -125,6 +125,7 @@ For VS Code, add its MCP server configuration to your local `config.json`. Keep 
 
 **③ Start the bridge**
 
+- **Linux** — run `./start.sh` in terminal (see [INSTALL_LINUX.md](INSTALL_LINUX.md) for full guide).
 - **Windows** — double-click `start.bat`. It detects Roblox Studio MCP and
   creates or updates the local `config.json` automatically. Existing optional
   Existing local bridge settings are preserved.
@@ -189,6 +190,10 @@ snapgent-full/
 ├── assets/                    # Project images
 ├── setup-config.ps1           # Detects Roblox Studio MCP on Windows
 ├── config.json                # Generated locally by start.bat (not tracked)
+├── start.sh                   # Linux bridge launcher
+├── bridge.py                  # Native Python bridge (Linux/macOS/Windows)
+├── vscode_mcp.py              # Native workspace & agent tools (OpenClaw, AGY, Hermes)
+├── INSTALL_LINUX.md           # Comprehensive Linux setup and tool documentation
 ├── start.bat                  # Windows bridge launcher
 ├── MacOS_Start.command        # macOS bridge launcher
 ├── bridge.exe                 # Windows local bridge

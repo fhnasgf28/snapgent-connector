@@ -171,8 +171,8 @@ const ZS = (() => {
       siteName = "this AI site",
       customPrompt = "",
       providerNotes = "",
-      targetServer = "roblox",
-      targetName = "Roblox Studio",
+      targetServer = "vscode",
+      targetName = "VS Code",
     } = opts;
 
     if (targetServer !== "roblox") {
@@ -188,7 +188,7 @@ At the start of the session, call \`list_commands\` with server "${targetServer}
 Rules:
 - Execute one command at a time and wait for its result before writing another.
 - Put every command in a fenced JSON code block; do not use native function calls.
-- Respect the user's requested workspace and file scope. Never perform broad or destructive changes without explicit confirmation.
+- Respect the user's requested workspace and file scope. You can read, write, and navigate any directory using relative paths (e.g. '.', './subfolder', '../sibling-project', '../../') or home paths ('~/...'), or switch the active workspace dynamically using 'set_workspace'. Never perform broad or destructive changes without explicit confirmation.
 - On errors, use the returned error to adjust the next command; do not silently claim success.
 - When finished, summarize the completed work briefly.
 - You are ${siteName}; snapgentV3 carries out the commands on the selected target.`;
@@ -354,7 +354,7 @@ IMPORTANT: Your very first action is to write \`list_commands\` with no params (
   // a tool result every so often so the model does not drift from the exact
   // command names over a long session. It is explicitly framed as an automatic
   // snapgentV3 reminder (NOT a user message and NOT a new command to run).
-  function toolsReminder(tools, targetName = "Roblox Studio", serverId = "roblox") {
+  function toolsReminder(tools, targetName = "VS Code", serverId = "vscode") {
     const toolsString =
       `  list_commands(server: "${serverId}") - list available ${targetName} commands with full parameter details\n` +
       compactTools(tools);

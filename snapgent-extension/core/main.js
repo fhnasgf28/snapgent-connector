@@ -96,7 +96,7 @@
     { name: "Grok", url: "https://grok.com/" },
   ];
   const TARGET_STORAGE_KEY = "zsSelectedMcpTarget";
-  let selectedTargetId = "roblox";
+  let selectedTargetId = "vscode";
   try {
     chrome.storage.local.get(TARGET_STORAGE_KEY, (result) => {
       const saved = result && result[TARGET_STORAGE_KEY];
@@ -866,7 +866,7 @@
   const TOOLS_TTL_MS = 30000;
 
   function activeTools() {
-    return A.toolList.filter((tool) => (tool.server || "roblox") === selectedTargetId);
+    return A.toolList.filter((tool) => (tool.server || "vscode") === selectedTargetId);
   }
 
   function refreshActiveToolNames() {
@@ -940,7 +940,7 @@
             const label = sv.id === "roblox" ? "Roblox Studio (primary)" : `${sv.id} (addon)`;
             return `- ${sv.id}: ${label} - ${sv.alive ? `${sv.tools || 0} commands available` : "offline (no tools)"}`;
           })
-        : ["- roblox: Roblox Studio (primary) - unknown (bridge did not report server health)"];
+        : ["- vscode: VS Code (primary) - unknown (bridge did not report server health)"];
       return (
         `Output of 'list_mcp_servers':\n` +
         `Connected MCP servers (${lines.length}):\n${lines.join("\n")}\n` +
@@ -952,7 +952,7 @@
     // if the model explicitly asks via {"server": "<id>"} (see list_mcp_servers).
     if (name === "list_commands" || name === "list_tools") {
       await ensureTools();
-      const requested = (args.server || selectedTargetId || "roblox").trim();
+      const requested = (args.server || selectedTargetId || "vscode").trim();
       // The MCP proxy keeps advertising Roblox's catalogue even with no Studio
       // attached, so list_commands would hand back the full command list and read
       // as "Roblox is fine" - then every command silently fails. When Roblox is
@@ -977,10 +977,10 @@
       // Tools from a bridge that doesn't tag "server" yet (old version) have no
       // .server field at all - treat those as the primary server rather than
       // hiding everything.
-      const scoped = A.toolList.filter((t) => (t.server || "roblox") === requested);
+      const scoped = A.toolList.filter((t) => (t.server || "vscode") === requested);
       if (!A.toolList.length) return `Output of '${name}':\nNo commands available - the bridge or selected MCP server may be offline.`;
       if (!scoped.length) {
-        return `Output of '${name}':\nERROR: no server named "${requested}" is connected. Connected servers: ${[...known].join(", ") || "roblox"}. Call list_mcp_servers to check.`;
+        return `Output of '${name}':\nERROR: no server named "${requested}" is connected. Connected servers: ${[...known].join(", ") || "vscode"}. Call list_mcp_servers to check.`;
       }
       const lines = scoped.map((t) => {
         const props = (t.inputSchema && t.inputSchema.properties) || {};
@@ -2570,7 +2570,6 @@
           <button id="zs-stop" hidden>■ Stop</button>
           <label class="zs-target-wrap" title="Choose which MCP server receives commands">
             <select id="zs-target" aria-label="MCP target">
-              <option value="roblox">Roblox Studio</option>
               <option value="vscode">VS Code</option>
             </select>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
@@ -2596,7 +2595,7 @@
           toast("Choose a target first.");
           return;
         }
-        selectedTargetId = targetSelect.value || "roblox";
+        selectedTargetId = targetSelect.value || "vscode";
         refreshActiveToolNames();
         try {
           chrome.storage.local.set({ [TARGET_STORAGE_KEY]: selectedTargetId });
@@ -2726,8 +2725,8 @@
     }
 
     function getTargetName(id = selectedTargetId) {
-      if (id === "roblox") return "Roblox Studio";
       if (id === "vscode") return "VS Code";
+      if (id === "roblox") return "Roblox Studio";
       const server = mergedMcpServers().find((item) => item.id === id);
       return server ? server.name : id;
     }
@@ -2737,10 +2736,9 @@
     function setTarget(id = selectedTargetId) {
       if (!targetSelect) return;
       const options = [
-        { id: "roblox", name: "Roblox Studio" },
         { id: "vscode", name: "VS Code" },
         ...mergedMcpServers()
-          .filter((server) => server.id !== "vscode")
+          .filter((server) => server.id !== "vscode" && server.id !== "roblox")
           .map((server) => ({ id: server.id, name: server.name })),
       ];
       if (!options.some((option) => option.id === id)) {
@@ -3179,7 +3177,7 @@
       const b = document.createElement("div");
       b.className = "zs-banner limit";
       b.innerHTML = `<div class="zs-banner-t">⚠ snapgentV3 disconnected</div>
-        <div class="zs-banner-m">Bridge stopped. Run start.bat and keep Roblox Studio open.</div>
+        <div class="zs-banner-m">Bridge stopped. Run ./start.sh or start.bat.</div>
         <div class="zs-banner-acts"><button class="zs-banner-x">Close</button></div>`;
       b.querySelector(".zs-banner-x").addEventListener("click", () => { b.remove(); if (bridgeBannerEl === b) bridgeBannerEl = null; });
       root.appendChild(b);
