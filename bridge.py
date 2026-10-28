@@ -96,7 +96,7 @@ async def handler(websocket):
                 tool_args = data.get("arguments", {})
                 print(f"[bridge] \033[36mCalling tool:\033[0m {tool_name} with {json.dumps(tool_args)[:120]}")
                 try:
-                    result_text = vscode_mcp.execute_tool(tool_name, tool_args)
+                    result_text = await asyncio.to_thread(vscode_mcp.execute_tool, tool_name, tool_args)
                     resp = {
                         "type": "tool_result",
                         "id": msg_id,
@@ -142,8 +142,20 @@ async def handler(websocket):
     except Exception as e:
         print(f"\033[31m[bridge] Error: {e}\033[0m")
 
+import re
+
+# Only allow connections from browser extensions. Web pages (https://...) and
+# clients without an Origin header are rejected with HTTP 403.
+# Optional: lock to specific extension IDs via ZS_ALLOWED_ORIGINS, e.g.
+# "chrome-extension://abcdefghijklmnop,moz-extension://xxxx"
+_env_origins = os.environ.get("ZS_ALLOWED_ORIGINS", "").strip()
+if _env_origins:
+    ALLOWED_ORIGINS = [o.strip() for o in _env_origins.split(",") if o.strip()]
+else:
+    ALLOWED_ORIGINS = [re.compile(r"^(chrome|moz)-extension://[A-Za-z0-9._-]+$")]
+
 async def main():
-    async with websockets.serve(handler, HOST, PORT):
+    async with websockets.serve(handler, HOST, PORT, origins=ALLOWED_ORIGINS):
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":

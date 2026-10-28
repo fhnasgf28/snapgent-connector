@@ -278,6 +278,69 @@ TOOLS = [
     }
 ]
 
+TOOLS.extend([
+    {
+        'name': 'read_many_files',
+        'description': 'Read several files in one call (max 20). Each file is limited to max_lines lines.',
+        'inputSchema': {
+            'type': 'object',
+            'properties': {
+                'paths': {'type': 'array', 'items': {'type': 'string'}, 'description': 'List of file paths to read.'},
+                'max_lines': {'type': 'integer', 'description': 'Max lines per file (default 200).'}
+            },
+            'required': ['paths']
+        }
+    },
+    {
+        'name': 'apply_patch',
+        'description': 'Apply a unified diff (git format) to files in the workspace using git apply. Set check_only=true to validate without changing anything.',
+        'inputSchema': {
+            'type': 'object',
+            'properties': {
+                'patch': {'type': 'string', 'description': 'Unified diff text.'},
+                'check_only': {'type': 'boolean', 'description': 'Only validate the patch, do not apply.'}
+            },
+            'required': ['patch']
+        }
+    },
+    {
+        'name': 'batch',
+        'description': 'Run several tool calls in one request (max 10, no nesting). Stops at the first error unless continue_on_error is true.',
+        'inputSchema': {
+            'type': 'object',
+            'properties': {
+                'calls': {
+                    'type': 'array',
+                    'items': {
+                        'type': 'object',
+                        'properties': {'name': {'type': 'string'}, 'arguments': {'type': 'object'}},
+                        'required': ['name']
+                    },
+                    'description': 'Ordered list of tool calls.'
+                },
+                'continue_on_error': {'type': 'boolean', 'description': 'Keep going after an error (default false).'}
+            },
+            'required': ['calls']
+        }
+    },
+    {
+        'name': 'git_status',
+        'description': 'Show short git status (with branch) of the workspace or a given folder.',
+        'inputSchema': {'type': 'object', 'properties': {'path': {'type': 'string', 'description': 'Optional repo folder.'}}}
+    },
+    {
+        'name': 'git_diff',
+        'description': 'Show git diff of the workspace or a given folder. Use staged=true for staged changes.',
+        'inputSchema': {
+            'type': 'object',
+            'properties': {
+                'path': {'type': 'string', 'description': 'Optional repo folder.'},
+                'staged': {'type': 'boolean', 'description': 'Show staged diff.'}
+            }
+        }
+    }
+])
+
 def safe_output(text: str, max_chars: int = 15000) -> str:
     """Keep response sizes reasonable to prevent browser UI freezing and context overflow."""
     if not text:
@@ -402,9 +465,15 @@ def execute_tool(name: str, args: dict) -> str:
         if not target.exists():
             return f"Error: folder '{target}' not found."
         results = []
-        for root, _, files in os.walk(target):
+        for root, dirs, files in os.walk(target):
+            dirs[:] = [d for d in dirs if d not in (".git", "__pycache__", "node_modules", ".venv", "venv")]
             for file in files:
                 fpath = Path(root) / file
+                try:
+                    if fpath.suffix.lower() in (".exe", ".dll", ".so", ".png", ".jpg", ".jpeg", ".gif", ".zip", ".pyc") or fpath.stat().st_size > 2 * 1024 * 1024:
+                        continue
+                except OSError:
+                    continue
                 try:
                     with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
                         for line_no, line in enumerate(f, 1):
@@ -536,6 +605,80 @@ def execute_tool(name: str, args: dict) -> str:
             return safe_output(res_text)
         except Exception as e:
             return f"Error executing hermes: {e}"
+
+    elif name == 'read_many_files':
+        paths = args.get('paths') or []
+        if not isinstance(paths, list) or not paths:
+            return "Error: 'paths' must be a non-empty list."
+        max_lines = int(args.get('max_lines') or 200)
+        parts = []
+        for p in paths[:20]:
+            t = resolve_path(p)
+            if not t.is_file():
+                parts.append(f'=== {t} ===\nError: file not found.')
+                continue
+            lines = t.read_text(encoding='utf-8', errors='replace').splitlines()
+            body = '\n'.join(f'{i + 1:4d} | {l}' for i, l in enumerate(lines[:max_lines]))
+            if len(lines) > max_lines:
+                body += f'\n[truncated: {len(lines)} lines total]'
+            parts.append(f'=== {t} ===\n{body}')
+        return safe_output('\n\n'.join(parts), 30000)
+
+    elif name == 'apply_patch':
+        patch = args.get('patch')
+        if not patch:
+            return "Error: 'patch' argument is required."
+        if not patch.endswith('\n'):
+            patch += '\n'
+        check_only = bool(args.get('check_only'))
+        cmd = ['git', 'apply', '--verbose'] + (['--check'] if check_only else [])
+        try:
+            res = subprocess.run(cmd, input=patch, cwd=str(WORKSPACE_PATH), capture_output=True, text=True, timeout=60)
+        except Exception as e:
+            return f'Error running git apply: {e}'
+        out = (res.stdout + res.stderr).strip()
+        if res.returncode != 0:
+            return f'Error: patch failed.\n{out}'
+        return ('Patch is valid (check only).\n' if check_only else 'Patch applied.\n') + out
+
+    elif name == 'batch':
+        calls = args.get('calls') or []
+        if not isinstance(calls, list) or not calls:
+            return "Error: 'calls' must be a non-empty list."
+        if len(calls) > 10:
+            return 'Error: max 10 calls per batch.'
+        cont = bool(args.get('continue_on_error'))
+        outs = []
+        for i, c in enumerate(calls, 1):
+            n = c.get('name') if isinstance(c, dict) else None
+            if not n or n == 'batch':
+                outs.append(f'[{i}] Error: invalid call (missing name or nested batch).')
+                if not cont:
+                    outs.append('[batch stopped at first error]')
+                    break
+                continue
+            try:
+                r = str(execute_tool(n, c.get('arguments') or {}))
+            except Exception as e:
+                r = f'Error: {e}'
+            outs.append(f'[{i}] {n}:\n{r}')
+            if r.startswith('Error') and not cont:
+                outs.append('[batch stopped at first error]')
+                break
+        return safe_output('\n\n'.join(outs), 30000)
+
+    elif name in ('git_status', 'git_diff'):
+        target = resolve_path(args.get('path')) if args.get('path') else WORKSPACE_PATH
+        if name == 'git_status':
+            cmd = ['git', 'status', '--short', '--branch']
+        else:
+            cmd = ['git', 'diff'] + (['--staged'] if args.get('staged') else [])
+        try:
+            res = subprocess.run(cmd, cwd=str(target), capture_output=True, text=True, timeout=60)
+        except Exception as e:
+            return f'Error running git: {e}'
+        out = (res.stdout + (('\nSTDERR:\n' + res.stderr) if res.stderr else '')).strip()
+        return safe_output(out) if out else '(no output - nothing to report)'
 
     else:
         return f"Error: unknown tool '{name}'"
