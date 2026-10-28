@@ -68,21 +68,17 @@ elif [ -f "bridge.py" ]; then
         echo "  ERROR: python3 not found."
         exit 1
     fi
-    echo "        Starting bridge.py using $PY..."
-    log "Starting bridge.py using $PY"
+    echo "        Starting bridge.py natively using $PY..."
+    log "Starting bridge.py natively using $PY"
     "$PY" bridge.py
 elif [ -f "bridge.exe" ]; then
+    # Legacy Windows fallback (not needed on Linux since bridge.py is available)
     if command -v wine >/dev/null 2>&1; then
-        echo "        Running bridge.exe via Wine..."
+        echo "        Running legacy bridge.exe via Wine..."
         log "Running bridge.exe via Wine"
         wine bridge.exe
     else
-        echo
-        echo "  Notice: bridge.exe is a Windows binary and 'wine' was not found."
-        echo "  To run bridge.exe on Linux, install Wine:"
-        echo "      sudo apt install wine"
-        echo "  Or run with Wine: wine bridge.exe"
-        echo
+        echo "  Notice: bridge.py was not found. Please ensure bridge.py exists for native Linux execution."
         exit 1
     fi
 else
