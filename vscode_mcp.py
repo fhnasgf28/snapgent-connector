@@ -152,6 +152,14 @@ TOOLS = [
                 "new_text": {
                     "type": "string",
                     "description": "Replacement text."
+                },
+                "occurrence": {
+                    "type": "integer",
+                    "description": "Optional 1-based index: replace only this occurrence instead of all."
+                },
+                "require_unique": {
+                    "type": "boolean",
+                    "description": "If true, fail unless old_text appears exactly once."
                 }
             },
             "required": ["path", "old_text", "new_text"]
@@ -202,6 +210,10 @@ TOOLS = [
                 "cwd": {
                     "type": "string",
                     "description": "Optional working directory to run the command in (e.g. '../sibling-project' or '.')."
+                },
+                "timeout": {
+                    "type": "integer",
+                    "description": "Optional timeout in seconds (default 120, max 1800)."
                 }
             },
             "required": ["command"]
@@ -341,6 +353,9 @@ TOOLS.extend([
     }
 ])
 
+import vscode_extra
+TOOLS.extend(vscode_extra.TOOLS)
+
 def safe_output(text: str, max_chars: int = 15000) -> str:
     """Keep response sizes reasonable to prevent browser UI freezing and context overflow."""
     if not text:
@@ -440,6 +455,20 @@ def execute_tool(name: str, args: dict) -> str:
         count = text.count(old_text)
         if count == 0:
             return f"Error: old_text not found in {target}"
+        if args.get("require_unique") and count != 1:
+            return f"Error: old_text appears {count} times in {target}; expected exactly 1. Add more context or use 'occurrence'."
+        occ = args.get("occurrence")
+        if occ:
+            occ = int(occ)
+            if occ < 1 or occ > count:
+                return f"Error: occurrence {occ} is out of range (found {count})."
+            start = 0
+            idx = -1
+            for _ in range(occ):
+                idx = text.find(old_text, start)
+                start = idx + len(old_text)
+            target.write_text(text[:idx] + new_text + text[idx + len(old_text):], encoding="utf-8")
+            return f"Replaced occurrence {occ} of {count} in {target}"
         new_content = text.replace(old_text, new_text)
         target.write_text(new_content, encoding="utf-8")
         return f"Replaced {count} occurrence(s) in {target}"
@@ -502,7 +531,7 @@ def execute_tool(name: str, args: dict) -> str:
                 cwd=str(target_dir),
                 capture_output=True,
                 text=True,
-                timeout=120
+                timeout=min(max(int(args.get('timeout') or 120), 1), 1800)
             )
             out = res.stdout
             if res.stderr:
@@ -510,7 +539,7 @@ def execute_tool(name: str, args: dict) -> str:
             res_text = out if out.strip() else f"(Command exited with code {res.returncode}, no output)"
             return safe_output(res_text)
         except subprocess.TimeoutExpired:
-            return "Error: Command timed out after 120 seconds."
+            return f"Error: Command timed out after {min(max(int(args.get('timeout') or 120), 1), 1800)} seconds."
         except Exception as e:
             return f"Error running command: {e}"
 
@@ -681,4 +710,7 @@ def execute_tool(name: str, args: dict) -> str:
         return safe_output(out) if out else '(no output - nothing to report)'
 
     else:
+        extra_result = vscode_extra.execute(name, args, resolve_path)
+        if extra_result is not None:
+            return safe_output(extra_result, 30000)
         return f"Error: unknown tool '{name}'"

@@ -14,16 +14,16 @@
   align-items: center;
   gap: 10px;
   box-sizing: border-box;
-  padding: 8px 12px 8px 14px;
-  background: rgba(15, 17, 26, 0.94);
-  color: #f1f5f9;
-  border: 1px solid rgba(99, 102, 241, 0.35);
-  border-radius: 14px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(16px);
-  font-size: 12.5px;
+  padding: 7px 10px 7px 12px;
+  background: rgba(9, 9, 11, 0.96);
+  color: #fafafa;
+  border: 1px solid #27272a;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(12px);
+  font-size: 12px;
   user-select: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.15s ease;
 }
 
 /* In-flow mode: the bar is a real, full-width node in the composer layout that
@@ -183,119 +183,103 @@ html.zs-light #zs-unstable {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .zs-state-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-#zs-state b { font-weight: 700; opacity: 1; color: #c7d2fe; }
+#zs-state b { font-weight: 600; opacity: 1; color: #fafafa; }
 #zs-state.zs-state-warn { opacity: 1; color: #fca5a5; }
 #zs-state.zs-state-warn b { color: #fecaca; }
-#zs-bar.tone-active #zs-state b { color: #6ee7b7; }
+#zs-bar.tone-active #zs-state b { color: #10b981; }
 
 /* primary action button (Start) */
 #zs-action {
   flex: none;
-  padding: 7px 13px;
-  border-radius: 9px; border: 1px solid transparent;
-  font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
-  transition: filter 0.15s ease, background 0.15s ease;
-  /* The label's "▶" (U+25B6) has both a text and an emoji presentation. On sites
-     whose font stack has no text glyph for it (ChatGPT), the browser falls back
-     to the colour emoji font and the arrow renders as a blue emoji instead of a
-     flat character like everywhere else. The labels also carry U+FE0E after the
-     arrow, which requests the same thing on browsers without this property. */
+  padding: 6px 12px;
+  border-radius: 6px; border: 1px solid transparent;
+  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
   font-variant-emoji: text;
 }
 #zs-action[data-kind="start"] {
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 2px 14px rgba(99, 102, 241, 0.45);
-  transition: all 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #fafafa;
+  color: #09090b;
+  border: 1px solid #fafafa;
+  box-shadow: none;
 }
 #zs-action[data-kind="start"]:hover {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.6);
+  background: #e4e4e7;
+  border-color: #e4e4e7;
 }
-/* Degraded start: Roblox is down but another MCP server is live. Amber to signal
-   "startable, but not the full setup" - distinct from the blue full-ready start. */
+/* Degraded start: Roblox is down but another MCP server is live. */
 #zs-action[data-kind="start-degraded"] {
-  background: linear-gradient(135deg, #d97706, #f59e0b);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 2px 12px rgba(217, 119, 6, 0.45);
-  transition: all 0.16s ease;
+  background: #f59e0b;
+  color: #09090b;
+  border: 1px solid #f59e0b;
+  box-shadow: none;
 }
 #zs-action[data-kind="start-degraded"]:hover {
-  filter: brightness(1.12);
-  transform: translateY(-1px);
+  background: #d97706;
+  border-color: #d97706;
 }
 #zs-action:disabled {
-  background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.45);
-  border-color: rgba(255, 255, 255, 0.10); box-shadow: none; cursor: not-allowed;
+  background: #18181b; color: #71717a;
+  border-color: #27272a; box-shadow: none; cursor: not-allowed;
 }
 /* attention flash when the user sends on a fresh chat without starting */
 #zs-action.zs-flash { animation: zs-flash 0.4s ease-in-out 3; }
 @keyframes zs-flash {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.6); }
+  50% { transform: scale(1.04); box-shadow: 0 0 0 3px rgba(250, 250, 250, 0.35); }
 }
 
 /* stop button (replaces the action button while the agent is busy) */
 #zs-stop {
-  flex: none; padding: 7px 14px;
-  background: linear-gradient(135deg, #e11d48, #f43f5e);
-  color: #fff; border: 0; border-radius: 9px;
-  font-size: 12.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
-  box-shadow: 0 2px 12px rgba(244, 63, 94, 0.4);
-  transition: all 0.15s ease;
+  flex: none; padding: 6px 12px;
+  background: #ef4444;
+  color: #fafafa; border: 1px solid #ef4444; border-radius: 6px;
+  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  box-shadow: none;
+  transition: background 0.12s ease;
 }
 #zs-stop:hover {
-  filter: brightness(1.1);
-  transform: translateY(-1px);
+  background: #dc2626;
 }
-/* Winding-down state: the loop is finishing its in-flight step after a Stop
-   click. Dimmed + not-allowed so it reads as "registered, please wait". */
 #zs-stop[data-state="stopping"] {
-  background: #b45309; cursor: progress; opacity: 0.85;
+  background: #b45309; border-color: #b45309; cursor: progress; opacity: 0.85;
 }
 #zs-stop[data-state="stopping"]:hover { background: #b45309; }
 
-/* Target and model selectors follow the Snapgent header pill style. */
+/* Target and model selectors: crisp rectangular developer pills */
 .zs-target-wrap {
   flex: none; position: relative; display: inline-flex; align-items: center;
-  height: 32px; padding: 0 10px 0 12px;
-  color: #e2e8f0; background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 18px;
-  backdrop-filter: blur(8px);
-  transition: all 0.15s ease;
+  height: 30px; padding: 0 10px;
+  color: #e4e4e7; background: #18181b;
+  border: 1px solid #27272a; border-radius: 6px;
+  transition: border-color 0.12s ease, background 0.12s ease;
 }
 .zs-target-wrap:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(129, 140, 248, 0.6);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+  background: #222226;
+  border-color: #3f3f46;
 }
 #zs-target {
   appearance: none; -webkit-appearance: none;
   max-width: min(130px, 30vw); padding: 0 16px 0 0;
   color: inherit; background: transparent; border: 0; outline: 0;
-  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  font: inherit; font-size: 11.5px; font-weight: 500; cursor: pointer;
 }
-#zs-target option { color: #1f2937; background: #fff; }
+#zs-target option { color: #fafafa; background: #18181b; }
 #zs-target:disabled { opacity: 0.65; cursor: not-allowed; }
 .zs-target-wrap svg { position: absolute; right: 8px; pointer-events: none; opacity: 0.65; }
 
 /* model switcher: names the current AI and opens the provider menu */
 #zs-switch {
   flex: none; display: flex; align-items: center; gap: 6px;
-  height: 32px; padding: 0 12px;
-  background: rgba(255, 255, 255, 0.05); color: #e2e8f0;
-  border: 1px solid rgba(99, 102, 241, 0.35); border-radius: 18px;
-  font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
-  backdrop-filter: blur(8px);
-  transition: all 0.15s ease;
+  height: 30px; padding: 0 10px;
+  background: #18181b; color: #e4e4e7;
+  border: 1px solid #27272a; border-radius: 6px;
+  font-size: 11.5px; font-weight: 500; cursor: pointer; white-space: nowrap;
+  transition: border-color 0.12s ease, background 0.12s ease;
 }
 #zs-switch:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(129, 140, 248, 0.6);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+  background: #222226;
+  border-color: #3f3f46;
 }
 #zs-switch svg { opacity: 0.55; }
 

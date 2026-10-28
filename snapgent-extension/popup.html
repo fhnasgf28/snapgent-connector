@@ -6,24 +6,23 @@
   <title>Snapgent Connector</title>
   <style>
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface-hover: #1f242c;
-      --surface-card: rgba(22, 27, 34, 0.85);
-      --border: rgba(240, 246, 252, 0.1);
-      --border-accent: rgba(99, 102, 241, 0.35);
-      --text-main: #f0f6fc;
-      --text-muted: #8b949e;
-      --accent: #6366f1;
-      --accent-glow: rgba(99, 102, 241, 0.25);
+      --bg: #09090b;
+      --surface: #121215;
+      --surface-elevated: #18181b;
+      --surface-hover: #222226;
+      --border: #27272a;
+      --border-strong: #3f3f46;
+      --text-main: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --accent: #fafafa;
       --ok: #10b981;
-      --ok-glow: rgba(16, 185, 129, 0.3);
       --warn: #f59e0b;
-      --warn-glow: rgba(245, 158, 11, 0.3);
-      --bad: #f43f5e;
-      --bad-glow: rgba(244, 63, 94, 0.3);
-      --radius: 12px;
-      --radius-sm: 8px;
+      --bad: #ef4444;
+      --radius: 6px;
+      --radius-sm: 4px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+      --font-mono: ui-monospace, "JetBrains Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     }
 
     * {
@@ -33,9 +32,9 @@
     }
 
     body {
-      width: 350px;
+      width: 356px;
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-family: var(--font-sans);
       background: var(--bg);
       color: var(--text-main);
       -webkit-font-smoothing: antialiased;
@@ -45,9 +44,9 @@
     .container {
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      padding: 16px;
-      background: radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 70%), var(--bg);
+      gap: 12px;
+      padding: 14px;
+      border-top: 2px solid var(--text-main);
     }
 
     /* ── Header ────────────────────────────────────────────── */
@@ -55,68 +54,63 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 9px;
+      gap: 8px;
     }
 
     .brand-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      background: linear-gradient(135deg, #6366f1, #a855f7);
+      width: 20px;
+      height: 20px;
+      border-radius: var(--radius-sm);
+      background: var(--text-main);
+      color: var(--bg);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 12px var(--accent-glow);
     }
 
     .brand-icon svg {
-      width: 14px;
-      height: 14px;
-      fill: #fff;
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
     }
 
     .brand-title {
-      font-size: 14px;
-      font-weight: 700;
-      letter-spacing: -0.2px;
-      background: linear-gradient(120deg, #ffffff, #c7d2fe);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
     }
 
     .version-tag {
+      font-family: var(--font-mono);
       font-size: 10px;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 999px;
-      background: rgba(99, 102, 241, 0.15);
-      border: 1px solid var(--border-accent);
-      color: #c7d2fe;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      letter-spacing: -0.02em;
     }
 
-    /* ── Status Card ───────────────────────────────────────── */
+    /* ── Status Panel ──────────────────────────────────────── */
     .card {
-      background: var(--surface-card);
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .status-row {
@@ -133,109 +127,124 @@
     }
 
     .dot {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
       background: var(--text-muted);
       position: relative;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex-shrink: 0;
     }
 
-    .dot::after {
-      content: "";
-      position: absolute;
-      inset: -3px;
-      border-radius: 50%;
-      background: inherit;
-      opacity: 0.35;
-      animation: pulse-ring 2s infinite;
+    .dot.ok {
+      background: var(--ok);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.14);
     }
 
-    @keyframes pulse-ring {
-      0% { transform: scale(1); opacity: 0.4; }
-      50% { transform: scale(1.6); opacity: 0; }
-      100% { transform: scale(1); opacity: 0; }
+    .dot.warn {
+      background: var(--warn);
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.14);
     }
 
-    .dot.ok   { background: var(--ok);   box-shadow: 0 0 10px var(--ok-glow); }
-    .dot.warn { background: var(--warn); box-shadow: 0 0 10px var(--warn-glow); }
-    .dot.bad  { background: var(--bad);  box-shadow: 0 0 10px var(--bad-glow); }
+    .dot.bad {
+      background: var(--bad);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.14);
+    }
 
     #state {
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: -0.1px;
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
     }
 
     #tools {
-      font-size: 11px;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: #94a3b8;
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
     }
 
     .bridge-endpoint {
-      margin-top: 10px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: var(--font-mono);
       font-size: 10.5px;
+      color: var(--text-secondary);
+      padding: 6px 8px;
+      background: var(--bg);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+
+    .bridge-endpoint .ep-label {
       color: var(--text-muted);
-      padding: 5px 8px;
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
+      margin-right: 4px;
     }
 
     .bridge-endpoint span.active {
-      color: #38bdf8;
-    }
-
-    /* CLI ecosystem tags */
-    .tags-row {
-      margin-top: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-    }
-
-    .tag-chip {
+      color: var(--ok);
+      font-weight: 500;
       font-size: 10px;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(99, 102, 241, 0.1);
-      border: 1px solid rgba(99, 102, 241, 0.2);
-      color: #c7d2fe;
-      display: inline-flex;
-      align-items: center;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Runtime Modules */
+    .tags-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
       gap: 4px;
     }
 
+    .tag-chip {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 500;
+      padding: 4px 6px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     #servers {
-      margin-top: 10px;
-      padding-top: 9px;
+      padding-top: 8px;
       border-top: 1px solid var(--border);
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-family: var(--font-mono);
       font-size: 10.5px;
-      line-height: 1.6;
-      color: #94a3b8;
+      line-height: 1.55;
+      color: var(--text-secondary);
       white-space: pre-line;
     }
     #servers:empty { display: none; }
 
     /* ── Quick Jump to Web AI ──────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
     .section-title {
-      font-size: 11px;
-      font-weight: 700;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.06em;
       color: var(--text-muted);
-      margin-bottom: 2px;
     }
 
     .ai-links {
@@ -247,37 +256,55 @@
     .ai-btn {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 7px 4px;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 8px;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-main);
+      border-radius: var(--radius);
+      color: var(--text-secondary);
       cursor: pointer;
-      font-size: 10.5px;
-      font-weight: 600;
-      transition: all 0.15s ease;
+      font-size: 11px;
+      font-weight: 500;
+      transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
       text-decoration: none;
     }
 
     .ai-btn:hover {
       background: var(--surface-hover);
-      border-color: var(--border-accent);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      border-color: var(--border-strong);
+      color: var(--text-main);
     }
 
-    .ai-icon {
-      font-size: 14px;
+    .ai-btn-top {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .ai-btn svg {
+      width: 10px;
+      height: 10px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      opacity: 0.6;
+    }
+
+    .ai-btn:hover svg {
+      opacity: 1;
     }
 
     /* ── Main Actions ──────────────────────────────────────── */
     .actions-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px;
+      gap: 6px;
     }
 
     button.btn {
@@ -285,38 +312,47 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      min-height: 34px;
-      padding: 6px 10px;
-      border-radius: var(--radius-sm);
+      height: 32px;
+      padding: 0 10px;
+      border-radius: var(--radius);
+      font-family: var(--font-sans);
       font-size: 11.5px;
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--text-main);
-      transition: all 0.15s ease;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+
+    button.btn svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      fill: none;
+      flex-shrink: 0;
     }
 
     button.btn:hover {
       background: var(--surface-hover);
-      border-color: rgba(255, 255, 255, 0.2);
-      transform: translateY(-1px);
+      border-color: var(--border-strong);
     }
 
     button.btn:active {
-      transform: translateY(0);
+      background: var(--surface-elevated);
     }
 
     button.btn-primary {
-      background: linear-gradient(135deg, #4f46e5, #6366f1);
-      border-color: rgba(255, 255, 255, 0.15);
-      color: #fff;
-      box-shadow: 0 2px 10px var(--accent-glow);
+      background: var(--text-main);
+      border-color: var(--text-main);
+      color: var(--bg);
+      font-weight: 600;
     }
 
     button.btn-primary:hover {
-      filter: brightness(1.1);
-      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+      background: #e4e4e7;
+      border-color: #e4e4e7;
     }
 
     button.btn-full {
@@ -326,24 +362,22 @@
     /* ── Footer ────────────────────────────────────────────── */
     footer {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 4px;
-      font-size: 10.5px;
+      justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      font-size: 10px;
       color: var(--text-muted);
-      text-align: center;
     }
 
     .cmd-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 8px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 6px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      color: #cbd5e1;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-secondary);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
     }
   </style>
 </head>
@@ -353,11 +387,11 @@
     <header>
       <div class="brand">
         <div class="brand-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          <svg viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
         </div>
-        <span class="brand-title">Snapgent Connector</span>
+        <span class="brand-title">Snapgent Bridge</span>
       </div>
-      <span class="version-tag">v3.2 Linux/MCP</span>
+      <span class="version-tag">v3.2 · MCP</span>
     </header>
 
     <!-- Status Card -->
@@ -365,22 +399,22 @@
       <div class="status-row">
         <div class="status-badge">
           <span id="dot" class="dot"></span>
-          <span id="state">Connecting…</span>
+          <span id="state">Connecting...</span>
         </div>
         <span id="tools">-- tools</span>
       </div>
 
       <div class="bridge-endpoint">
-        <span>ws://127.0.0.1:17613</span>
-        <span class="active">● Port Active</span>
+        <span><span class="ep-label">HOST</span>ws://127.0.0.1:17613</span>
+        <span class="active">ONLINE</span>
       </div>
 
-      <!-- Ecosystem Chips -->
+      <!-- Runtime Modules -->
       <div class="tags-row">
-        <span class="tag-chip">⚡ VS Code</span>
-        <span class="tag-chip">🦞 OpenClaw</span>
-        <span class="tag-chip">✨ AGY CLI</span>
-        <span class="tag-chip">🪽 Hermes</span>
+        <span class="tag-chip">vscode</span>
+        <span class="tag-chip">openclaw</span>
+        <span class="tag-chip">agy-cli</span>
+        <span class="tag-chip">hermes</span>
       </div>
 
       <div id="servers"></div>
@@ -388,22 +422,24 @@
 
     <!-- Quick AI Jump -->
     <div>
-      <div class="section-title">Open AI Web Agent</div>
+      <div class="section-header">
+        <span class="section-title">Target Web Sessions</span>
+      </div>
       <div class="ai-links">
         <a class="ai-btn" id="ai-deepseek" href="https://chat.deepseek.com/" target="_blank">
-          <span class="ai-icon">🐳</span>
+          <div class="ai-btn-top"><span>01</span><svg viewBox="0 0 24 24"><path d="M7 17L17 7M7 7h10v10"/></svg></div>
           <span>DeepSeek</span>
         </a>
         <a class="ai-btn" id="ai-claude" href="https://claude.ai/" target="_blank">
-          <span class="ai-icon">✳️</span>
+          <div class="ai-btn-top"><span>02</span><svg viewBox="0 0 24 24"><path d="M7 17L17 7M7 7h10v10"/></svg></div>
           <span>Claude</span>
         </a>
         <a class="ai-btn" id="ai-chatgpt" href="https://chatgpt.com/" target="_blank">
-          <span class="ai-icon">🟢</span>
+          <div class="ai-btn-top"><span>03</span><svg viewBox="0 0 24 24"><path d="M7 17L17 7M7 7h10v10"/></svg></div>
           <span>ChatGPT</span>
         </a>
         <a class="ai-btn" id="ai-gemini" href="https://gemini.google.com/" target="_blank">
-          <span class="ai-icon">✨</span>
+          <div class="ai-btn-top"><span>04</span><svg viewBox="0 0 24 24"><path d="M7 17L17 7M7 7h10v10"/></svg></div>
           <span>Gemini</span>
         </a>
       </div>
@@ -411,15 +447,24 @@
 
     <!-- Actions -->
     <div class="actions-grid">
-      <button class="btn btn-primary" id="reconnect">↻ Reconnect</button>
-      <button class="btn" id="restart">⟳ Restart MCP</button>
-      <button class="btn btn-full" id="settings">⚙ Settings & In-Page Bar</button>
+      <button class="btn btn-primary" id="reconnect">
+        <svg viewBox="0 0 24 24"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        <span>Reconnect</span>
+      </button>
+      <button class="btn" id="restart">
+        <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+        <span>Restart MCP</span>
+      </button>
+      <button class="btn btn-full" id="settings">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        <span>Workspace & Overlay Config</span>
+      </button>
     </div>
 
     <!-- Footer -->
     <footer>
-      <span>Launcher command:</span>
-      <div class="cmd-pill"><code>./start.sh</code> (Linux/Mac) · <code>start.bat</code></div>
+      <span>Daemon script</span>
+      <div class="cmd-pill">./start.sh</div>
     </footer>
   </div>
 
