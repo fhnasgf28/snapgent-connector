@@ -1966,6 +1966,20 @@
     delete item.__zsChip;
   }
 
+  // Tidy a chip body for display: drop the injected "Output of '…':" prefix,
+  // pretty-print valid JSON, and report a short size summary for the header.
+  function formatChipBody(raw) {
+    let text = String(raw || "").replace(/^\s*Output of '[^']*':\n?/, "");
+    const trimmed = text.trim();
+    if (/^[\[{]/.test(trimmed)) {
+      try { text = JSON.stringify(JSON.parse(trimmed), null, 2); } catch {}
+    }
+    const lines = text ? text.split("\n").length : 0;
+    const bytes = text.length;
+    const size = bytes >= 1024 ? (bytes / 1024).toFixed(1) + " KB" : bytes + " B";
+    return { text, summary: lines + " lines · " + size };
+  }
+
   const decorate = {
     // Core renderer. opts: {label, detail, body, category, phase, cls, whole}
     chip(item, opts) {
@@ -1994,12 +2008,29 @@
           `</div>` +
           (hasBody ? `<div class="zs-chip-body"><pre></pre></div>` : "");
         chip.querySelector(".zs-chip-tx").textContent = label;
-        if (detail) chip.querySelector(".zs-chip-dt").textContent = detail;
+        const fmt = hasBody ? formatChipBody(body) : null;
+        const dt = detail || (fmt && phase !== "run" ? fmt.summary : "");
+        if (dt) chip.querySelector(".zs-chip-dt").textContent = dt;
         if (hasBody) {
-          chip.querySelector(".zs-chip-body pre").textContent = body;
+          chip.querySelector(".zs-chip-body pre").textContent = fmt.text;
           const head = chip.querySelector(".zs-chip-head");
           head.style.cursor = "pointer";
           head.onclick = () => chip.classList.toggle("open");
+          const copyBtn = document.createElement("button");
+          copyBtn.type = "button";
+          copyBtn.className = "zs-chip-copy";
+          copyBtn.textContent = "Copy";
+          copyBtn.onclick = (ev) => {
+            ev.stopPropagation();
+            const done = (ok) => {
+              copyBtn.textContent = ok ? "Copied" : "Failed";
+              setTimeout(() => { copyBtn.textContent = "Copy"; }, 1200);
+            };
+            try {
+              navigator.clipboard.writeText(fmt.text).then(() => done(true), () => done(false));
+            } catch { done(false); }
+          };
+          chip.querySelector(".zs-chip-body").insertBefore(copyBtn, chip.querySelector(".zs-chip-body pre"));
         }
       }
 

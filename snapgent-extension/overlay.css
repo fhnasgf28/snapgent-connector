@@ -762,6 +762,25 @@ ol.flex-col-reverse > div.w-full:not(.mx-auto) > .zs-chip {
   white-space: pre-wrap; word-break: break-word;
 }
 
+/* Copy button inside the expanded body (top-right corner) */
+.zs-chip-body { position: relative; }
+.zs-chip-copy {
+  position: absolute; top: 6px; right: 8px; z-index: 1;
+  padding: 2px 9px;
+  font: 600 10.5px ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #cdd2e0; background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 5px;
+  cursor: pointer; opacity: 0.75;
+  transition: opacity 0.12s ease, background 0.12s ease;
+}
+.zs-chip-copy:hover { opacity: 1; background: rgba(255, 255, 255, 0.14); }
+.zs-chip-body pre { padding-right: 64px; }
+html.zs-light .zs-chip-copy {
+  color: #2b313d; background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.14);
+}
+html.zs-light .zs-chip-copy:hover { background: rgba(0, 0, 0, 0.1); }
+
 /* state themes (override category background, keep accent stripe) */
 .zs-chip.done   { --cat: #5cbf9a; }
 .zs-chip.err    { --cat: #ef6b6b; border-color: rgba(239, 68, 68, 0.38); color: #f0b8b8; }
