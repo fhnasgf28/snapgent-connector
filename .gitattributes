@@ -1,5 +1,10 @@
 # Shell launchers MUST keep LF endings: a CRLF checkout makes bash fail on
-# macOS/Linux with "$'\r': command not found". The repo is developed on
-# Windows (autocrlf), so pin these explicitly.
+# macOS/Linux with "$'\r': command not found".
 *.command text eol=lf
 *.sh       text eol=lf
+
+# Windows batch files and PowerShell MUST keep CRLF endings:
+# an LF checkout causes cmd.exe to drop characters and fail syntax parsing.
+*.bat     text eol=crlf
+*.cmd     text eol=crlf
+*.ps1     text eol=crlf
