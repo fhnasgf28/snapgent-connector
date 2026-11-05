@@ -4176,10 +4176,19 @@
     }
     for (const item of items) {
       if (item.classList.contains("zs-hidden")) continue;
+      // Perf: a turn already checked and proven NOT to be an injected turn is
+      // skipped while its text length is unchanged (cheap textContent.length vs a
+      // full recursive classifyText walk). A streaming turn keeps changing length,
+      // so it is still re-checked; the full decorate.sweep() remains the safety net.
+      const len = String((item.textContent || "").length);
+      if (item.dataset.zsPre === len) continue;
       const txt = P.classifyText(item, ".zs-chip");
       if (txt.includes(ZS.SYS_MARKER) ||
           (P.isUserItem(item) && ZSParse.isInjectedFeedback(txt))) {
         item.classList.add("zs-hidden");
+        delete item.dataset.zsPre;
+      } else {
+        item.dataset.zsPre = len;
       }
     }
   }

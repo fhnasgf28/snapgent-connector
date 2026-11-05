@@ -67,13 +67,13 @@ const ZSProvider = (() => {
     userRole: "user",
     assistantRole: "assistant",
     reply: ".markdown",
-    editor: '#prompt-textarea,[data-mobile-composer-prompt],textarea[aria-label="Chat with ChatGPT"]',
+    editor: '#prompt-textarea,#mobile-composer-prompt,[data-mobile-composer-prompt],textarea[name="prompt"],textarea[aria-label*="ChatGPT"],div.ProseMirror[contenteditable="true"]',
     // The ONE submit control; its data-testid says whether it is currently a
     // send or a stop button (see isStopBtn). Id first - it survives testid churn.
-    submitBtn: "#composer-submit-button, button[data-testid='send-button'], button[data-testid='stop-button'], button[aria-label='Send message'], button[aria-label*='Stop'], button[aria-label*='stop'], button[aria-label*='Interrompre'], button[aria-label*='Arrêter']",
+    submitBtn: "#composer-submit-button, button[data-testid='send-button'], button[data-testid='stop-button'], button[aria-label='Send message'], button[aria-label*='Send'], button[aria-label*='Kirim'], button[aria-label*='Stop'], button[aria-label*='stop'], button[aria-label*='Hentikan'], button[aria-label*='Interrompre'], button[aria-label*='Arrêter'], [role='button'][aria-label*='Send'], [role='button'][aria-label*='Kirim'], [role='button'][aria-label*='Stop'], [role='button'][aria-label*='Hentikan']",
     // Kept for installSendHooks, which needs to recognise a click on the native
     // stop control wherever it lives.
-    stopBtn: "button[data-testid='stop-button']",
+    stopBtn: "button[data-testid='stop-button'], button[aria-label*='Stop'], button[aria-label*='stop'], button[aria-label*='Hentikan'], [role='button'][aria-label*='Stop'], [role='button'][aria-label*='Hentikan']",
     codeWrap: "pre",
     // composer frame: the <form> that wraps the ProseMirror editor.
     errorSurfaces: '[role="alert"],[data-testid*="error"],[class*="error-message"]',
@@ -255,10 +255,10 @@ const ZSProvider = (() => {
   const isFreshChat = () =>
     chatIsEmpty() && location.pathname === "/" && !!getEditor();
 
-  // The composer box the Start gate hides as one unit (the form around the editor).
+  // The composer box the Start gate hides as one unit (the form/card around the editor).
   const composerFrame = () => {
     const ed = getEditor();
-    return ed ? (ed.closest("form") || ed.parentElement) : null;
+    return ed ? (findComposerCard(ed) || ed.parentElement) : null;
   };
 
   // The scrollable band that actually shows the typed text. The editor node
@@ -324,10 +324,26 @@ const ZSProvider = (() => {
     return { parent: box, before, inside: true };
   }
 
+  function findComposerCard(ed) {
+    if (!ed) return null;
+    const formOrPrimary = ed.closest ? (ed.closest("form") || ed.closest("[data-composer-primary]") || ed.closest("[class*='composer-surface']")) : null;
+    if (formOrPrimary) return formOrPrimary;
+    let n = ed.parentElement;
+    for (let i = 0; i < 8 && n && n !== document.body; i++, n = n.parentElement) {
+      try {
+        const cs = getComputedStyle(n);
+        if (parseFloat(cs.borderTopLeftRadius) >= 12 && cs.backgroundColor && cs.backgroundColor !== "rgba(0, 0, 0, 0)" && cs.backgroundColor !== "transparent") {
+          return n;
+        }
+      } catch {}
+    }
+    return ed.parentElement || ed;
+  }
+
   function barAnchor() {
     const ed = getEditor();
     if (!ed || !(ed instanceof HTMLTextAreaElement)) return null;
-    return ed.closest("form") || ed.closest("[data-composer-primary]") || ed;
+    return findComposerCard(ed);
   }
 
   // ── Input lock ────────────────────────────────────────────────────────────
@@ -359,7 +375,7 @@ const ZSProvider = (() => {
   // raised "ChatGPT did not accept the injected message after 4 attempts".
   const isStopBtn = (b) => !!b && (
     b.getAttribute("data-testid") === "stop-button" ||
-    /\b(stop|interrompre|arrêter)\b/i.test(b.getAttribute("aria-label") || "")
+    /\b(stop|interrompre|arrêter|hentikan)\b/i.test(b.getAttribute("aria-label") || "")
   );
   const submitButton = () => {
     const b = document.querySelector(S.submitBtn);
@@ -681,8 +697,9 @@ const ZSProvider = (() => {
   // No site modes to enforce on ChatGPT (model picker is left to the user).
   function enforceComposer() { return { ready: true }; }
   async function ensureComposerReady(reason) {
-    diag("mode_ready", { reason, provider: "chatgpt" });
-    return { ready: !!getEditor() };
+    const ready = !!getEditor() || await waitFor(() => !!getEditor(), 5000);
+    diag("mode_ready", { reason, provider: "chatgpt", ready });
+    return { ready };
   }
 
   // ── Error / limit detection (site chrome only) ────────────────────────────

@@ -638,20 +638,36 @@ def execute_tool(name: str, args: dict) -> str:
 
     elif name == 'read_many_files':
         paths = args.get('paths') or []
+        if isinstance(paths, str):
+            paths = [paths]
         if not isinstance(paths, list) or not paths:
             return "Error: 'paths' must be a non-empty list."
-        max_lines = int(args.get('max_lines') or 200)
+        try:
+            max_lines = max(1, int(args.get('max_lines') or 200))
+        except (TypeError, ValueError):
+            max_lines = 200
         parts = []
         for p in paths[:20]:
-            t = resolve_path(p)
-            if not t.is_file():
-                parts.append(f'=== {t} ===\nError: file not found.')
-                continue
-            lines = t.read_text(encoding='utf-8', errors='replace').splitlines()
-            body = '\n'.join(f'{i + 1:4d} | {l}' for i, l in enumerate(lines[:max_lines]))
-            if len(lines) > max_lines:
-                body += f'\n[truncated: {len(lines)} lines total]'
-            parts.append(f'=== {t} ===\n{body}')
+            try:
+                t = resolve_path(str(p))
+                if not t.is_file():
+                    parts.append(f'=== {p} ===\nError: file not found.')
+                    continue
+                lines = []
+                total = 0
+                with t.open('r', encoding='utf-8', errors='replace') as fh:
+                    for line in fh:
+                        total += 1
+                        if total <= max_lines:
+                            lines.append(line.rstrip('\r\n'))
+                body = '\n'.join(f'{i + 1:4d} | {l}' for i, l in enumerate(lines))
+                if total > max_lines:
+                    body += f'\n[truncated: {total} lines total]'
+                parts.append(f'=== {t} ===\n{body}')
+            except Exception as e:
+                parts.append(f'=== {p} ===\nError: {e}')
+        if len(paths) > 20:
+            parts.append(f'[skipped {len(paths) - 20} paths: max 20 per call]')
         return safe_output('\n\n'.join(parts), 30000)
 
     elif name == 'apply_patch':
