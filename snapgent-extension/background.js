@@ -26,6 +26,7 @@ const REQUEST_TIMEOUT_DEFAULT = 130000; // a bit above the 120s tool timeout
 
 let ws = null;
 let connected = false;
+let isEnabled = true;
 let reconnectDelay = RECONNECT_MIN;
 let reconnectTimer = null;
 let heartbeatTimer = null;
@@ -58,6 +59,7 @@ function log(...a) {
 
 // ── WebSocket lifecycle ─────────────────────────────────────────────────
 function connect() {
+  if (!isEnabled) return;
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
     return;
   }
@@ -110,6 +112,7 @@ function connect() {
 }
 
 function scheduleReconnect() {
+  if (!isEnabled) return;
   clearTimeout(reconnectTimer);
   reconnectTimer = setTimeout(connect, reconnectDelay);
   reconnectDelay = Math.min(reconnectDelay * 1.7, RECONNECT_MAX);
@@ -286,7 +289,7 @@ function failAllPending(reason) {
 
 // ── status push to any open DeepSeek tab + popup ─────────────────────────
 function statusObj() {
-  return { type: "zs-status", connected, mcpAlive, studio: studioConnected, studioApp, studioProc, tools: toolsCache.length, servers: serversCache };
+  return { type: "zs-status", enabled: isEnabled, connected, mcpAlive, studio: studioConnected, studioApp, studioProc, tools: toolsCache.length, servers: serversCache };
 }
 
 function broadcastStatus() {
@@ -301,8 +304,48 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     switch (msg.type) {
       case "status":
-        if (!connected) connect(); // self-heal after a worker wake-up
+        if (isEnabled && !connected) connect(); // self-heal after a worker wake-up
         sendResponse(statusObj());
+        break;
+      case "toggle_enabled":
+        isEnabled = !isEnabled;
+        try { chrome.storage.local.set({ zsEnabled: isEnabled }); } catch {}
+        if (!isEnabled) {
+          clearTimeout(reconnectTimer);
+          stopHeartbeat();
+          if (ws) {
+            try { ws.close(); } catch {}
+            ws = null;
+          }
+          connected = false;
+          failAllPending("Snapgent stopped by user");
+          broadcastStatus();
+        } else {
+          reconnectDelay = RECONNECT_MIN;
+          connect();
+          broadcastStatus();
+        }
+        sendResponse({ ok: true, enabled: isEnabled });
+        break;
+      case "set_enabled":
+        isEnabled = !!msg.enabled;
+        try { chrome.storage.local.set({ zsEnabled: isEnabled }); } catch {}
+        if (!isEnabled) {
+          clearTimeout(reconnectTimer);
+          stopHeartbeat();
+          if (ws) {
+            try { ws.close(); } catch {}
+            ws = null;
+          }
+          connected = false;
+          failAllPending("Snapgent stopped by user");
+          broadcastStatus();
+        } else {
+          reconnectDelay = RECONNECT_MIN;
+          connect();
+          broadcastStatus();
+        }
+        sendResponse({ ok: true, enabled: isEnabled });
         break;
       case "list_tools": {
         // Prefer a live refresh; fall back to cache so the loop never stalls.
@@ -343,6 +386,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         break;
       }
       case "reconnect":
+        isEnabled = true;
+        try { chrome.storage.local.set({ zsEnabled: true }); } catch {}
         reconnectDelay = RECONNECT_MIN;
         connect();
         sendResponse({ ok: true });
@@ -354,8 +399,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return true; // async sendResponse
 });
 
-// Wake/keepalive hooks.
-chrome.runtime.onStartup.addListener(connect);
-chrome.runtime.onInstalled.addListener(connect);
+function initEnabled() {
+  try {
+    chrome.storage.local.get({ zsEnabled: true }, (r) => {
+      isEnabled = r && r.zsEnabled !== false;
+      if (isEnabled) connect();
+      else broadcastStatus();
+    });
+  } catch {
+    connect();
+  }
+}
 
-connect();
+// Wake/keepalive hooks.
+chrome.runtime.onStartup.addListener(initEnabled);
+chrome.runtime.onInstalled.addListener(initEnabled);
+
+initEnabled();

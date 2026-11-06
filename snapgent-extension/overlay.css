@@ -218,6 +218,17 @@ html.zs-light #zs-unstable {
   background: #d97706;
   border-color: #d97706;
 }
+/* Stop active agent session */
+#zs-action[data-kind="stop-session"] {
+  background: #ef4444;
+  color: #fafafa;
+  border: 1px solid #ef4444;
+  box-shadow: none;
+}
+#zs-action[data-kind="stop-session"]:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
 #zs-action:disabled {
   background: #18181b; color: #71717a;
   border-color: #27272a; box-shadow: none; cursor: not-allowed;

@@ -194,6 +194,14 @@
       letter-spacing: 0.04em;
     }
 
+    .bridge-endpoint span.inactive {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
     /* Runtime Modules */
     .tags-row {
       display: grid;
@@ -359,6 +367,38 @@
       grid-column: 1 / -1;
     }
 
+    button.btn-power {
+      height: 36px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    button.btn-stop {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #ef4444;
+    }
+
+    button.btn-stop:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: #ffffff;
+    }
+
+    button.btn-start {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #10b981;
+    }
+
+    button.btn-start:hover {
+      background: #10b981;
+      border-color: #10b981;
+      color: #09090b;
+    }
+
     /* ── Footer ────────────────────────────────────────────── */
     footer {
       display: flex;
@@ -406,7 +446,7 @@
 
       <div class="bridge-endpoint">
         <span><span class="ep-label">HOST</span>ws://127.0.0.1:17613</span>
-        <span class="active">ONLINE</span>
+        <span class="active" id="endpoint-status">ONLINE</span>
       </div>
 
       <!-- Runtime Modules -->
@@ -447,6 +487,10 @@
 
     <!-- Actions -->
     <div class="actions-grid">
+      <button class="btn btn-full btn-power btn-stop" id="toggle-power" title="Start or Stop Snapgent">
+        <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+        <span id="power-text">Stop Snapgent</span>
+      </button>
       <button class="btn btn-primary" id="reconnect">
         <svg viewBox="0 0 24 24"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
         <span>Reconnect</span>
@@ -463,8 +507,8 @@
 
     <!-- Footer -->
     <footer>
-      <span>Daemon script</span>
-      <div class="cmd-pill">./start.sh</div>
+      <span>Bridge controls</span>
+      <div class="cmd-pill">./start.sh · ./stop.sh</div>
     </footer>
   </div>
 

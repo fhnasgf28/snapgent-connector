@@ -14,6 +14,39 @@ function render(s) {
   const up = list.filter((x) => x.alive).length;
   const mcpOk = s.connected && (s.mcpAlive || up > 0 || s.tools > 0);
   const dot = document.getElementById("dot");
+  const powerBtn = document.getElementById("toggle-power");
+  const powerText = document.getElementById("power-text");
+  const epStatus = document.getElementById("endpoint-status");
+  const isEnabled = s.enabled !== false;
+
+  if (powerBtn && powerText) {
+    if (isEnabled) {
+      powerBtn.className = "btn btn-full btn-power btn-stop";
+      powerText.textContent = "Stop Snapgent";
+      powerBtn.title = "Click to stop Snapgent connector and in-page agent";
+    } else {
+      powerBtn.className = "btn btn-full btn-power btn-start";
+      powerText.textContent = "Start Snapgent";
+      powerBtn.title = "Click to start Snapgent connector and in-page agent";
+    }
+  }
+
+  if (!isEnabled) {
+    dot.className = "dot bad";
+    state.textContent = "Snapgent Stopped";
+    tools.textContent = "Disabled";
+    if (epStatus) {
+      epStatus.className = "inactive";
+      epStatus.textContent = "STOPPED";
+    }
+    servers.textContent = "";
+    return;
+  }
+
+  if (epStatus) {
+    epStatus.className = s.connected ? "active" : "inactive";
+    epStatus.textContent = s.connected ? "ONLINE" : "OFFLINE";
+  }
 
   dot.className = "dot " + (!s.connected ? "bad" : mcpOk ? "ok" : "warn");
   state.textContent = s.connected
@@ -41,6 +74,15 @@ function openOrFocusHost(hostUrl) {
     } else {
       chrome.tabs.create({ url: hostUrl });
     }
+  });
+}
+
+const powerBtn = document.getElementById("toggle-power");
+if (powerBtn) {
+  powerBtn.addEventListener("click", () => {
+    chrome.runtime.sendMessage({ type: "toggle_enabled" }, (res) => {
+      refresh();
+    });
   });
 }
 

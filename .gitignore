@@ -1,4 +1,4 @@
-﻿# Local-only folders
+# Local-only folders
 Compressed/
 Deprecated/
 ExtensionPresentation/
@@ -18,3 +18,4 @@ devtools/
 Thumbs.db
 desktop.ini
 __pycache__/
+*.code-workspace

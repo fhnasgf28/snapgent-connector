@@ -48,7 +48,7 @@ python3 -m pip install --user websockets
 
 ### Langkah 3.2: Berikan Izin Eksekusi pada Script
 ```bash
-chmod +x start.sh bridge.py vscode_mcp.py
+chmod +x start.sh stop.sh bridge.py vscode_mcp.py
 ```
 
 ### Langkah 3.3: Konfigurasi Workspace Path (Opsional)
@@ -78,22 +78,22 @@ export WORKSPACE_PATH="/path/ke/proyek/anda"
 
 ---
 
-## 5. Cara Menjalankan Bridge
+## 5. Cara Menjalankan & Menghentikan Bridge
 
 ### Opsi A: Menjalankan di Terminal Foreground (Rekomendasi saat Pengujian)
 ```bash
 ./start.sh
 ```
-*(Biarkan jendela terminal tetap terbuka selama Anda menggunakan ekstensi).*
+*(Tekan `Ctrl+C` di terminal atau jalankan `./stop.sh` untuk menghentikan).*
 
 ### Opsi B: Menjalankan di Background (Daemon Mode)
 Jika Anda ingin bridge tetap berjalan di latar belakang:
 ```bash
 nohup ./start.sh > logs/bridge_daemon.log 2>&1 &
 ```
-Untuk menghentikan bridge background:
+Untuk menghentikan bridge (background maupun service):
 ```bash
-fuser -k 17613/tcp
+./stop.sh
 ```
 
 ---

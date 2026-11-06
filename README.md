@@ -125,8 +125,8 @@ For VS Code, add its MCP server configuration to your local `config.json`. Keep 
 
 **③ Start the bridge**
 
-- **Linux** — run `./start.sh` in terminal (see [INSTALL_LINUX.md](INSTALL_LINUX.md) for full guide).
-- **Windows** — double-click `start.bat`. It detects Roblox Studio MCP and
+- **Linux** — run `./start.sh` in terminal to start (or `./stop.sh` to stop, see [INSTALL_LINUX.md](INSTALL_LINUX.md)).
+- **Windows** — double-click `start.bat` to start (or `stop.bat` to stop). It detects Roblox Studio MCP and
   creates or updates the local `config.json` automatically. Existing optional
   Existing local bridge settings are preserved.
 - **macOS** — double-click `MacOS_Start.command`.

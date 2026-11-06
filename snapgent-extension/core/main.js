@@ -97,29 +97,51 @@
   ];
   const TARGET_STORAGE_KEY = "zsSelectedMcpTarget";
   let selectedTargetId = "vscode";
+  let isExtensionEnabled = true;
+  const startedSessions = new Set();
+  const stoppedSessions = new Set();
+  let lastSyncPath = null;
+  function rememberSession(path) {
+    if (!path) return;
+    if (startedSessions.has(path)) return;
+    startedSessions.add(path);
+    try { chrome.storage.local.set({ zsStartedSessions: [...startedSessions].slice(-300) }); } catch {}
+  }
   try {
-    chrome.storage.local.get(TARGET_STORAGE_KEY, (result) => {
-      const saved = result && result[TARGET_STORAGE_KEY];
-      if (typeof saved === "string" && saved) {
-        selectedTargetId = saved;
-        refreshActiveToolNames();
-        if (ui.setTarget) {
-          ui.setTarget(saved);
-          bg({ type: "status" }).then((status) => status && ui.setStatus(status));
+    chrome.storage.local.get([TARGET_STORAGE_KEY, "zsEnabled", "zsStartedSessions", "zsStoppedSessions"], (result) => {
+      if (result) {
+        if (result.zsEnabled === false) {
+          isExtensionEnabled = false;
+          if (typeof ui !== "undefined" && ui.setEnabled) ui.setEnabled(false);
+        }
+        if (Array.isArray(result.zsStartedSessions)) {
+          for (const p of result.zsStartedSessions) startedSessions.add(p);
+        }
+        if (Array.isArray(result.zsStoppedSessions)) {
+          for (const p of result.zsStoppedSessions) stoppedSessions.add(p);
+        }
+        const saved = result[TARGET_STORAGE_KEY];
+        if (typeof saved === "string" && saved) {
+          selectedTargetId = saved;
+          refreshActiveToolNames();
+          if (typeof ui !== "undefined" && ui.setTarget) {
+            ui.setTarget(saved);
+            bg({ type: "status" }).then((status) => status && ui.setStatus(status));
+          }
         }
       }
     });
   } catch (error) {
-    console.warn("[snapgentV3] Could not load selected MCP target:", error);
+    console.warn("[snapgentV3] Could not load stored extension state:", error);
   }
 
   const A = {
     running: false,
     stop: false,
     // stopping: the user clicked Stop and we are winding the loop down. Set the
-    // instant the button is clicked so the bar can show immediate "Stopping…"
-    // feedback and keep the button steady (no flicker) until the loop's finally
-    // clears it - the live generation signal toggles off/on as the loop drains,
+    // instant the button is clicked so the bar can show immediate "Stopping..."
+    // feedback and keep the button steady (no flicker) until the loop completes
+    // and clears it - the live generation signal toggles off/on as the loop drains,
     // which otherwise made the Stop button vanish then reappear.
     stopping: false,
     // userStopped: the user deliberately halted generation - via our "■ Stop"
@@ -2694,9 +2716,51 @@
 
     // The primary button does different things depending on the current state
     // (set by renderBar via actionBtn.dataset.kind).
+    function stopSession() {
+      diag("stopSession");
+      if (A.running || A.starting) stopLoop();
+      A.started = false;
+      A.starting = false;
+      A.running = false;
+      A.userStopped = true;
+      const path = P.conversationKey();
+      if (path) {
+        stoppedSessions.add(path);
+        try { chrome.storage.local.set({ zsStoppedSessions: [...stoppedSessions].slice(-300) }); } catch {}
+        if (startedSessions.has(path)) {
+          startedSessions.delete(path);
+          try { chrome.storage.local.set({ zsStartedSessions: [...startedSessions].slice(-300) }); } catch {}
+        }
+      }
+      P.setInputLock(false);
+      inputCover(false);
+      toast("Agent stopped in this chat");
+      lastBarSig = "";
+      renderBar();
+    }
+
     function onActionClick() {
       const kind = actionBtn.dataset.kind;
-      if (kind === "start" || kind === "start-degraded") startSession();
+      if (kind === "start" || kind === "start-degraded") {
+        const path = P.conversationKey();
+        if (path && stoppedSessions.has(path)) {
+          stoppedSessions.delete(path);
+          try { chrome.storage.local.set({ zsStoppedSessions: [...stoppedSessions].slice(-300) }); } catch {}
+          if (domHasZsSignal()) {
+            rememberSession(path);
+            A.started = true;
+            A.userStopped = false;
+            setStarted(true);
+            toast("Agent resumed");
+            lastBarSig = "";
+            renderBar();
+            return;
+          }
+        }
+        startSession();
+      } else if (kind === "stop-session") {
+        stopSession();
+      }
     }
 
     // ── Custom prompt (persisted) ───────────────────────────────────────────
@@ -2927,6 +2991,7 @@
           toneClass = "active";
           msg = `<b>Active</b>${tools ? ` · ${tools} tools` : ""} · ${targetNameHtml()}`;
         }
+        label = "■ Stop"; kind = "stop-session";
       } else if (A.started) {
         // Prefer the ADVERTISED list length (A.toolList - the AGGREGATE catalogue
         // across every connected MCP server, already filtered by the vision/blocked
@@ -2975,6 +3040,11 @@
           // The green "Agent active" text is the live status signal.
           msg = `<b>Active</b>${tools ? ` · ${tools} tools` : ""}`;
         }
+        label = "■ Stop"; kind = "stop-session";
+      } else if (P.conversationKey() && stoppedSessions.has(P.conversationKey())) {
+        toneClass = "standby";
+        msg = `<b>Agent stopped</b> · ${targetNameHtml()}`;
+        label = `▶︎ Start`; kind = "start";
       } else if (P.isFreshChat() || P.chatIsEmpty()) {
         // Treat ANY empty chat (no turns yet) as the standby/start case - not just
         // the strict fresh-chat match. isFreshChat() also requires an exact root
@@ -3349,9 +3419,33 @@
       u.style.top = Math.round(Math.max(4, br.top - uh - 5)) + "px";
     }
 
+    function setEnabled(val) {
+      isExtensionEnabled = !!val;
+      if (!isExtensionEnabled) {
+        if (root) root.style.display = "none";
+        if (bar) bar.style.display = "none";
+        clearAnchorPad();
+        if (menuEl) menuEl.hidden = true;
+        hideSetup();
+        P.setInputLock(false);
+        inputCover(false);
+        if (A.running || A.starting) stopLoop();
+      } else {
+        if (root) root.style.display = "";
+        lastBarSig = "";
+        renderBar();
+      }
+    }
+
     function placeBar() {
       barRaf = requestAnimationFrame(placeBar);
       if (!bar) return;
+      if (!isExtensionEnabled) {
+        bar.style.display = "none";
+        clearAnchorPad();
+        if (menuEl) menuEl.hidden = true;
+        return;
+      }
 
       // Self-heal: a SPA navigation or a full re-render on the host (seen on Arena
       // when the message frame jumps/teleports to the bottom) can detach our whole
@@ -3729,7 +3823,7 @@
     }
 
     build();
-    return { setStatus, setTarget, getTargetName, staleExtensionAlert, setStarted, setStarting, showStop, markStopping, inputCover, toast, banner, showImages, nudgeStart, updateStartGate, refreshSetup, getCustomPrompt, openMenu: (toSupport) => openMenuFn && openMenuFn(toSupport) };
+    return { setEnabled, setStatus, setTarget, getTargetName, staleExtensionAlert, setStarted, setStarting, showStop, markStopping, inputCover, toast, banner, showImages, nudgeStart, updateStartGate, refreshSetup, getCustomPrompt, openMenu: (toSupport) => openMenuFn && openMenuFn(toSupport) };
   })();
 
   // ── Live token + timer, shown ONLY on a tool call's chip detail. The
@@ -3981,6 +4075,9 @@
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg && msg.type === "zs-status") {
+      if (typeof msg.enabled === "boolean") {
+        ui.setEnabled(msg.enabled);
+      }
       ui.setStatus({ connected: msg.connected, mcpAlive: msg.mcpAlive, studio: msg.studio, studioApp: msg.studioApp, studioProc: msg.studioProc, tools: msg.tools, servers: msg.servers });
     }
     if (msg && msg.type === "zs-open-menu") {
@@ -4004,6 +4101,9 @@
       diag("bridge.staleExtension", { via: "status", error: s.error });
       return;
     }
+    if (typeof s.enabled === "boolean") {
+      ui.setEnabled(s.enabled);
+    }
     ui.setStatus(s);
   }
   // Hydrate the persisted re-statement budget for this conversation up front, so
@@ -4012,32 +4112,6 @@
   bg({ type: "status" }).then(onStatus);
   statusTimer = setInterval(() => bg({ type: "status" }).then(onStatus), 5000);
 
-  // Session state is derived from the ACTUAL chat, but sites VIRTUALIZE their
-  // message lists: the system-prompt turn is dropped from the DOM once it
-  // scrolls out of the window. So we key "started" by conversation
-  // (P.conversationKey()): once we have seen the marker for a key, we remember
-  // it (persisted so it survives reloads). We never flip while busy.
-  const startedSessions = new Set();
-  let lastSyncPath = null;
-  function rememberSession(path) {
-    // A falsy key = a TRANSIENT conversation URL (e.g. Gemini's /app before an
-    // id is assigned). Remembering it would mark every future fresh chat as
-    // "already started" and kill the Start gate. The real key is remembered by
-    // the next sync once the site assigns the conversation its id.
-    if (!path) return;
-    if (startedSessions.has(path)) return;
-    startedSessions.add(path);
-    try { chrome.storage.local.set({ zsStartedSessions: [...startedSessions].slice(-300) }); } catch {}
-  }
-  // Load the persisted set once, then re-sync.
-  try {
-    chrome.storage.local.get("zsStartedSessions", (r) => {
-      if (r && Array.isArray(r.zsStartedSessions)) {
-        for (const p of r.zsStartedSessions) startedSessions.add(p);
-        syncSessionState();
-      }
-    });
-  } catch {}
   // A conversation IS a snapgentV3 session if any rendered turn carries a
   // telltale artefact: the system-prompt marker, an injected tool-result /
   // system-note turn, or a snapgentV3 command an assistant wrote. Works even
@@ -4108,8 +4182,9 @@
     }
     if (A.starting || A.injecting || A.running) return;
     const path = P.conversationKey();
+    const isStopped = !!path && stoppedSessions.has(path);
     const markerInDom = domHasZsSignal();
-    if (markerInDom) rememberSession(path);
+    if (markerInDom && !isStopped) rememberSession(path);
     let has;
     if (path && path === lastSyncPath) {
       // SAME, REAL conversation: never downgrade a known-started session just
@@ -4119,10 +4194,10 @@
       // sticky - every fresh chat shares "", so a brief transient sweep during
       // navigation would otherwise PIN lastSyncPath="" with has=true and then keep
       // "Agent active" forever on the next empty chat (it would never recompute).
-      has = A.started || markerInDom || (!!path && startedSessions.has(path));
+      has = !isStopped && (A.started || markerInDom || (!!path && startedSessions.has(path)));
     } else {
       // Different conversation → recompute from scratch.
-      has = markerInDom || (!!path && startedSessions.has(path));
+      has = !isStopped && (markerInDom || (!!path && startedSessions.has(path)));
       lastSyncPath = path;
     }
     if (has !== A.started) {
@@ -4139,6 +4214,7 @@
     sweepScheduled = true;
     const run = () => {
       sweepScheduled = false;
+      if (!isExtensionEnabled) return;
       syncSessionState();
       P.enforceComposer();  // keep the composer in the provider's required modes
       ui.updateStartGate(); // block the input until a session is started
@@ -4156,6 +4232,7 @@
   // so the class lands before that first paint; the full sweep still runs after
   // to build the actual chip.
   function preHideWholeItems() {
+    if (!isExtensionEnabled) return;
     const items = P.allItems();
     // Optimistic pre-hide of a freshly injected result turn (armed in
     // submitAndGetBase). The text-based match below can only fire once the
@@ -4277,7 +4354,7 @@
   // spontaneously fires a command on some later unrelated DOM churn.
   const RESUME_FRESH_MS = 180000;
   setInterval(() => {
-    if (!A.started || A.running || A.starting || A.injecting) return;
+    if (!isExtensionEnabled || !A.started || A.running || A.starting || A.injecting) return;
     if (document.hidden) return;                         // AI tab not foreground → don't parse/exec off-screen (agentLoop gates too)
     if (A.userStopped) return;                          // user halted → never relaunch
     if (P.isGenerating()) return;
@@ -4353,6 +4430,7 @@
   // what they were typing).
   const SYS_FALLBACK_IDLE_MS = 20000;
   setInterval(async () => {
+    if (!isExtensionEnabled) return;
     if (!sysResendDue()) return;
     if (!A.started || A.running || A.starting || A.injecting) return;
     if (document.hidden || A.userStopped) return;
